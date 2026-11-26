@@ -20,6 +20,12 @@ DATA_URL = (
     "interpretable-ml-book/master/data/bike.csv"
 )
 
+# sha256 of the immutable raw CSV. src.ingest.load_raw() refuses to return
+# data whose hash differs, so `make data`, `make features` and every test
+# fail if anything -- including a Bash `cp` the Edit/Write hook cannot see --
+# changes data/raw/bike_daily.csv.
+RAW_SHA256 = "a6bed1577f6e4de56dcfae6d8315985073cc0ad3446c8c99ed60c86a0b5ad9dc"
+
 TARGET = "cnt"
 
 # --- Three reasons a column is kept out of the feature set --------------

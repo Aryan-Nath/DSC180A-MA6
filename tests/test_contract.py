@@ -13,7 +13,7 @@ from src.config import (
     TARGET,
 )
 from src.features import build_features, feature_columns, reindex_to_calendar
-from src.ingest import load_raw
+from src.ingest import load_raw, verify_raw_hash
 from src.train import MODELS, temporal_split
 
 
@@ -89,3 +89,17 @@ def test_column_classification_check_can_fail(tmp_path):
     df["cnt_next_day"] = df["cnt"].shift(-1)
     df.to_csv(fake, index=False)
     assert unclassified_raw_columns(fake) == {"cnt_next_day"}
+
+
+def test_raw_file_is_unmodified():
+    """data/raw/bike_daily.csv is immutable. Catches writes that bypass the
+    Edit/Write permission and hook, e.g. a Bash `cp` (see docs/SEEDED_FAULTS.md)."""
+    verify_raw_hash()
+
+
+def test_hash_check_detects_a_modified_copy(tmp_path):
+    """The hash check is not vacuous: a one-byte change must raise."""
+    copy = tmp_path / "bike_daily.csv"
+    copy.write_bytes(RAW.read_bytes() + b"\n")
+    with pytest.raises(ValueError, match="sha256"):
+        verify_raw_hash(copy)
