@@ -22,7 +22,7 @@ needed. Nothing leaves your laptop.
     make model          # pulls the base model, builds `bikeshare-coder` with a 64k context
     make check-model    # confirms Claude Code can reach it and that tool calls work
     make all            # data -> features -> train, writes reports/metrics.json
-    make test           # 14 tests
+    make test           # 20 tests
 
     # 4. Start the agent, from the repo root
     claude
@@ -30,6 +30,32 @@ needed. Nothing leaves your laptop.
 `.claude/settings.json` points Claude Code at `http://localhost:11434` and
 names the model, so `claude` works with no environment variables. Run
 `/status` inside Claude Code to confirm it says `bikeshare-coder`.
+
+### Reproducing without Ollama (reviewers)
+
+    python3 -m venv .venv && source .venv/bin/activate
+    pip install -r requirements.txt
+    make all && make test    # reports/metrics.json must be unchanged by `make all`
+
+`make all` and `make test` need no model. To run `agent/audit.py` or Claude Code
+against a hosted model instead of the local one, create a git-ignored
+`.claude/settings.local.json` (it overrides `.claude/settings.json`; no secrets,
+your normal Claude login is used) and set `AUDIT_MODEL`:
+
+    {
+      "model": "claude-sonnet-5-5",
+      "env": {
+        "ANTHROPIC_BASE_URL": "https://api.anthropic.com",
+        "ANTHROPIC_AUTH_TOKEN": "",
+        "ANTHROPIC_API_KEY": "",
+        "ANTHROPIC_MODEL": "claude-sonnet-5-5",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-5-5",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-sonnet-5-5",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-sonnet-5-5"
+      }
+    }
+
+    AUDIT_MODEL=claude-sonnet-5-5 python agent/audit.py . --out reports/audit.jsonl
 
 ### Which base model
 

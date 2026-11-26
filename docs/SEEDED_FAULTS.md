@@ -23,7 +23,7 @@ where marked.
   spaces; the hook handles them):
 
 ```
-{"session_id": "sim-0001", "transcript_path": "/dev/null", "cwd": "/Users/Aryan/Desktop/UCSD Coursework/Fall 2026/DSC 180A/bikeshare-open", "hook_event_name": "PostToolUse", "tool_name": "Edit", "tool_input": {"file_path": "/Users/Aryan/Desktop/UCSD Coursework/Fall 2026/DSC 180A/bikeshare-open/src/features.py", "old_string": "...", "new_string": "...", "replace_all": false}, "tool_response": {"filePath": "/Users/Aryan/Desktop/UCSD Coursework/Fall 2026/DSC 180A/bikeshare-open/src/features.py", "success": true}, "tool_use_id": "toolu_sim_0001"}
+{"session_id": "sim-0001", "transcript_path": "/dev/null", "cwd": ".", "hook_event_name": "PostToolUse", "tool_name": "Edit", "tool_input": {"file_path": "src/features.py", "old_string": "...", "new_string": "...", "replace_all": false}, "tool_response": {"filePath": "src/features.py", "success": true}, "tool_use_id": "toolu_sim_0001"}
 ```
 
 - The hook runs only `tests/test_leakage.py` (not the contract tests), so a
@@ -110,7 +110,7 @@ make: *** [test] Error 1
 stderr:
 
 ```
-Leakage tests failed after editing /Users/Aryan/Desktop/UCSD Coursework/Fall 2026/DSC 180A/bikeshare-open/src/features.py:
+Leakage tests failed after editing src/features.py:
 feats =         dteday  instant  season  ...  cnt_lag_7   cnt_roll_7  cnt_roll_14
 0   2011-01-17     17.0  WINTER  ...     132....142857  2814.714286
 699 2012-12-31    731.0  WINTER  ...      920.0  1531.428571  2672.571429
@@ -197,7 +197,7 @@ make: *** [test] Error 1
 stderr:
 
 ```
-Leakage tests failed after editing /Users/Aryan/Desktop/UCSD Coursework/Fall 2026/DSC 180A/bikeshare-open/src/features.py:
+Leakage tests failed after editing src/features.py:
 [700 rows x 29 columns]
 
     def test_rolling_mean_excludes_today(feats):
@@ -289,7 +289,7 @@ make: *** [test] Error 1
 Hook stderr for the same state (exit code 2):
 
 ```
-Leakage tests failed after editing /Users/Aryan/Desktop/UCSD Coursework/Fall 2026/DSC 180A/bikeshare-open/src/features.py:
+Leakage tests failed after editing src/features.py:
 ......F..                                                                [100%]
 =================================== FAILURES ===================================
 _________________ test_encode_weather_raises_on_unknown_label __________________
@@ -381,14 +381,14 @@ tampered row after:  ['2012-10-29', np.int64(2180), np.int64(20), np.int64(2200)
 raw sha after cp: d09143ff47f5a1f5
 hook exit: 0  (stderr bytes:        0)
 ERROR tests/test_leakage.py::test_dates_are_sorted_and_unique - ValueError: /...
-ERROR tests/test_split.py::test_splits_non_empty - ValueError: /Users/Aryan/D...
+ERROR tests/test_split.py::test_splits_non_empty - ValueError: <repo>/data/raw/...
 ERROR tests/test_split.py::test_splits_are_ordered_in_time - ValueError: /Use...
-ERROR tests/test_split.py::test_no_overlapping_dates - ValueError: /Users/Ary...
+ERROR tests/test_split.py::test_no_overlapping_dates - ValueError: <repo>/data/raw/...
 1 failed, 5 passed, 14 errors in 1.34s
 make: *** [test] Error 1
 --- make data:
     )
-ValueError: /Users/Aryan/Desktop/UCSD Coursework/Fall 2026/DSC 180A/bikeshare-open/data/raw/bike_daily.csv sha256 is d09143ff47f5a1f5..., expected a6bed1577f6e4de5...; the immutable raw file was modified. Restore it with `git checkout data/raw/bike_daily.csv`.
+ValueError: data/raw/bike_daily.csv sha256 is d09143ff47f5a1f5..., expected a6bed1577f6e4de5...; the immutable raw file was modified. Restore it with `git checkout data/raw/bike_daily.csv`.
 make: *** [data] Error 1
 restored sha: a6bed1577f6e4de56dcfae6d8315985073cc0ad3446c8c99ed60c86a0b5ad9dc  data/raw/bike_daily.csv
  M src/config.py
