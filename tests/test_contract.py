@@ -3,7 +3,15 @@ import pandas as pd
 import pytest
 from sklearn.metrics import r2_score
 
-from src.config import LAG_WARMUP, TARGET
+from src.config import (
+    CONSUMED_COLS,
+    FORBIDDEN,
+    LAG_WARMUP,
+    RAW,
+    RAW_FEATURE_COLS,
+    REDUNDANT_COLS,
+    TARGET,
+)
 from src.features import build_features, feature_columns, reindex_to_calendar
 from src.ingest import load_raw
 from src.train import MODELS, temporal_split
@@ -56,3 +64,28 @@ def test_persistence_baseline_is_reported():
     """The baseline that matters for a lag-driven model is 'yesterday again'.
     It must be in the comparison, whatever its score."""
     assert "baseline_persistence" in MODELS
+
+
+def unclassified_raw_columns(path) -> set[str]:
+    """Columns of the CSV at `path` that src/config.py does not classify."""
+    classified = FORBIDDEN | RAW_FEATURE_COLS | CONSUMED_COLS | REDUNDANT_COLS | {"dteday"}
+    return set(pd.read_csv(path, nrows=0).columns) - classified
+
+
+def test_every_raw_column_is_classified():
+    """A new column in the raw CSV (e.g. `cnt_next_day`) would flow straight
+    into feature_columns() as a numeric feature. Force a decision first."""
+    assert not unclassified_raw_columns(RAW), (
+        f"unclassified raw columns: {sorted(unclassified_raw_columns(RAW))}; "
+        "add each to FORBIDDEN or a feature class in src/config.py"
+    )
+
+
+def test_column_classification_check_can_fail(tmp_path):
+    """Proves the check above is not vacuous: a copy of the CSV with an extra
+    column must be flagged. The real raw file is never touched."""
+    fake = tmp_path / "bike_daily.csv"
+    df = pd.read_csv(RAW)
+    df["cnt_next_day"] = df["cnt"].shift(-1)
+    df.to_csv(fake, index=False)
+    assert unclassified_raw_columns(fake) == {"cnt_next_day"}

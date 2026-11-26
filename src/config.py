@@ -45,6 +45,14 @@ UNVERIFIED_COLS = {"cnt_2d_bfr"}
 # What feature_columns() and the tests actually enforce.
 FORBIDDEN = LEAKAGE_COLS | TIME_INDEX_COLS | UNVERIFIED_COLS
 
+# Every column of data/raw/bike_daily.csv must be classified somewhere, so a
+# new raw column cannot silently become a feature (feature_columns() keeps any
+# numeric column not in FORBIDDEN). tests/test_contract.py enforces this.
+# Besides FORBIDDEN and `dteday` there are three more classes:
+RAW_FEATURE_COLS = {"temp", "atemp", "hum", "windspeed"}  # used as-is, same-day weather
+CONSUMED_COLS = {"holiday", "workday", "weather"}  # re-encoded in src/features.py
+REDUNDANT_COLS = {"season", "mnth", "weekday"}  # calendar info already in dayofweek / month_sin / month_cos
+
 # Temporal split: train on 2011, validate on H1 2012, test on H2 2012.
 TRAIN_END = "2011-12-31"
 VALID_END = "2012-06-30"
