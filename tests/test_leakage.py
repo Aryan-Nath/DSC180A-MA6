@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from src.config import FORBIDDEN, RAW, TARGET
-from src.features import build_features, feature_columns
+from src.features import build_features, encode_weather, feature_columns
 from src.ingest import load_raw
 
 
@@ -70,6 +70,17 @@ def test_roll_14_is_mean_of_14_strictly_earlier_days(feats):
     # Guard against an off-by-one that includes today instead of day-14.
     with_today = raw.loc[window[1:].append(pd.DatetimeIndex([date]))].mean()
     assert feats.set_index("dteday").cnt_roll_14[date] != pytest.approx(with_today)
+
+
+def test_encode_weather_raises_on_unknown_label():
+    """Closes the gap found by seeded fault c: with the raise removed,
+    .map() turned an unseen label into NaN and dropna() deleted the row
+    silently, and no test noticed. Real data never has an unseen label, so
+    only a synthetic input can exercise this path."""
+    with pytest.raises(ValueError, match="unmapped weather labels"):
+        encode_weather(pd.Series(["GOOD", "MISTY", "SNOW"]))
+    # Known labels, including NaN, must still pass through without raising.
+    assert encode_weather(pd.Series(["GOOD", "BAD"])).tolist() == [0.0, 2.0]
 
 
 def test_no_missing_values(feats):
