@@ -20,29 +20,40 @@ the auditor's claims I could not reproduce.
 ## 2. Batch audit of this repo (`agent/audit.py`)
 
 Command: `python agent/audit.py . --out reports/audit.jsonl`
+(run with `AUDIT_MODEL=claude-sonnet-5-5`; the script reads that variable and was not modified)
 
-**Result: could not run. `reports/audit.jsonl` was NOT produced** (the script
-writes the file only after all repos finish). TODO (not run: no local model).
+**Run with `claude-sonnet-5-5` via the Anthropic API, not the local Ollama model.**
+Ollama is not installed, so `bikeshare-coder` does not exist. The user approved
+sending this repo to Claude for this run. I redirected the SDK's Claude Code
+binary with a git-ignored `.claude/settings.local.json` (model
+`claude-sonnet-5-5`, `ANTHROPIC_BASE_URL=https://api.anthropic.com`, the
+starter's dummy `ANTHROPIC_AUTH_TOKEN` blanked so the normal Claude login is
+used). The committed `.claude/settings.json` and `~/.claude.json` are unchanged.
+The "workspace not trusted" warning still printed (it only ignores the
+`permissions.allow` entries) and did not block the run.
 
-What I observed, verbatim from the run (stderr of the process, which then
-produced no further output and was killed by me after a 150 s limit; exit
-status 142 is the shell's report of that SIGALRM):
+`reports/audit.jsonl` (verbatim, one line):
 
+```json
+{"repo": "bikeshare-open", "leakage": "none", "temporal_ok": true, "baseline_reported": true, "reproducible": false, "findings": [{"file": "src/train.py", "line": 1, "issue": "I could not run `make train` end to end. The active Python (miniconda 3.13) has no pyarrow, which requirements.txt pins and the README's venv would install. Parquet reads failed, so I did not diff reports/metrics.json against a fresh run.", "why_it_matters": "The claim that metrics.json matches a fresh run is unverified here. Everything else I checked supports it: HGB has random_state=0, Ridge is deterministic, the pipeline is documented, and versions are pinned."}, {"file": "scripts/exp4_transform.py", "line": 80, "issue": "reports/exp4_test.json already exists, so `--final` has been run. The script has no guard to stop a second run, and the CLAUDE.md 'run it once' rule rests on convention alone.", "why_it_matters": "A re-run could turn test into a tuning set. The transform is chosen on validation only, so there is no leakage today."}], "confidence": "medium"}
 ```
-Ignoring 5 permissions.allow entries from .claude/settings.json: this workspace has not been trusted. Run Claude Code interactively here once and accept the trust dialog, or set projects["/Users/Aryan/Desktop/UCSD Coursework/Fall 2026/DSC 180A/bikeshare-open"].hasTrustDialogAccepted: true in /Users/Aryan/.claude.json.
-[claude-code:unrecognized_model] {"model":"bikeshare-coder","query_source":"sdk"}
-```
 
-Why: `ollama` is not installed on this machine (`ollama: command not found`),
-nothing listens on `localhost:11434`, and `bikeshare-coder` was never built
-(`make model` was deliberately not run: it downloads a ~7 GB model and needs
-permission). `.claude/settings.json` sends the SDK's Claude Code binary to
-that endpoint, so the audit has no model to talk to. I did not point it at a
-hosted model, because that would send this repo to an external service
-without the student's say-so, and I did not edit the student's
-`~/.claude.json` to accept the workspace trust dialog.
+**Verdict.**
 
-To produce the real file, on a machine with Ollama: `make model`,
-`make check-model`, run Claude Code once in this repo and accept the trust
-prompt, then run the command above and commit `reports/audit.jsonl`
-(and paste the relevant findings into section 1 style notes if useful).
+Auditor's findings, as reported: leakage `none`, temporal_ok `true`,
+baseline_reported `true`, reproducible `false`, confidence `medium`. Two findings:
+(1) `src/train.py:1`: it could not run `make train` because its Python lacked
+pyarrow, so it did not diff `reports/metrics.json` against a fresh run;
+(2) `scripts/exp4_transform.py:80`: `--final` has no guard against a second run,
+the "run it once" rule is convention only.
+
+My judgement: `reproducible: false` is an artifact of the audit environment, not
+a defect in the repo. The auditor used a system Python 3.13, while
+`requirements.txt` pins `pyarrow==26.0.1`, which is installed in `.venv` (I
+checked). I did not re-run the auditor inside the venv, so the "matches a fresh
+run" claim is not independently confirmed by this audit. Finding 2 is accurate
+(`TEST_OUT.write_text` runs unconditionally under `--final`) but changes no
+reported number: the transform is chosen on validation only. A guard would be a
+reasonable hardening, not done here. The auditor found no leakage; I take that
+as consistent with the `check_identity`/test-suite checks but it is one model's
+single run at medium confidence, not proof.

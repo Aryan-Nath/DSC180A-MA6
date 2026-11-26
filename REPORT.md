@@ -108,7 +108,7 @@ local `qwen3.5:9b` open-weight model the assignment describes. Ollama is not
 installed on the machine, `make model` was never run, and the `.claude/settings.json`
 `bikeshare-coder` endpoint was never used. Consequences: the PostToolUse hook was
 invoked by hand with a simulated payload, not by a live session, and
-`agent/audit.py` could not run (see `docs/AUDIT.md`).
+`agent/audit.py` was later run against `claude-sonnet-5-5` via the Anthropic API (git-ignored `.claude/settings.local.json` override, since Ollama was unavailable); see `docs/AUDIT.md`.
 
 **Agent-generated files and functions** (all written by the model above):
 - `tests/test_leakage.py`: `test_roll_14_is_mean_of_14_strictly_earlier_days`,
