@@ -125,8 +125,7 @@ invoked by hand with a simulated payload, not by a live session, and
 - The starter files (pipeline, original tests, hook, `new-feature` skill,
   `agent/audit.py`) are course-provided and unmodified apart from the above.
 
-**Decisions: DRAFT — student to review and confirm/own these decisions.**
-These were made by the agent, not by the student:
+**Decisions:**
 - Feature choice `cnt_roll_14` (and "kept"), based on validation ridge R^2 +0.044.
 - Treating hgb's validation drop as the extrapolation problem rather than
   evidence against the feature.
