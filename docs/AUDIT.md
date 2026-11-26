@@ -32,28 +32,33 @@ used). The committed `.claude/settings.json` and `~/.claude.json` are unchanged.
 The "workspace not trusted" warning still printed (it only ignores the
 `permissions.allow` entries) and did not block the run.
 
-`reports/audit.jsonl` (verbatim, one line):
+`reports/audit.jsonl` (verbatim, one line; this is the second run, made with
+`.venv` activated):
 
 ```json
-{"repo": "bikeshare-open", "leakage": "none", "temporal_ok": true, "baseline_reported": true, "reproducible": false, "findings": [{"file": "src/train.py", "line": 1, "issue": "I could not run `make train` end to end. The active Python (miniconda 3.13) has no pyarrow, which requirements.txt pins and the README's venv would install. Parquet reads failed, so I did not diff reports/metrics.json against a fresh run.", "why_it_matters": "The claim that metrics.json matches a fresh run is unverified here. Everything else I checked supports it: HGB has random_state=0, Ridge is deterministic, the pipeline is documented, and versions are pinned."}, {"file": "scripts/exp4_transform.py", "line": 80, "issue": "reports/exp4_test.json already exists, so `--final` has been run. The script has no guard to stop a second run, and the CLAUDE.md 'run it once' rule rests on convention alone.", "why_it_matters": "A re-run could turn test into a tuning set. The transform is chosen on validation only, so there is no leakage today."}], "confidence": "medium"}
+{"repo": "bikeshare-open", "leakage": "none", "temporal_ok": true, "baseline_reported": true, "reproducible": true, "findings": [{"file": "README.md", "line": 25, "issue": "README says `make test` runs 14 tests, but the suite has 20 and all 20 pass.", "why_it_matters": "This is a documentation mismatch only. It doesn't affect leakage, splits, baselines or reproducibility, but a stale count can hide a deleted test."}, {"file": "scripts/exp4_transform.py", "line": 75, "issue": "`--final` is documented as run-once, but nothing enforces it. A rerun overwrites reports/exp4_test.json, and I couldn't tell from the repo whether it has been run more than once.", "why_it_matters": "Repeated runs against test, or picking a transform after seeing test scores, would compromise the held-out set. Choosing the transform from validation results is correct."}], "confidence": "high"}
 ```
+
+**History.** The first run (committed in a553765, since overwritten) used the
+system Python 3.13, which has no pyarrow, and reported `reproducible: false`
+because it could not run `make train`. That was an environment artifact:
+`requirements.txt` pins `pyarrow==26.0.1`, installed in `.venv`. I re-ran inside
+the venv; that is the file above.
 
 **Verdict.**
 
 Auditor's findings, as reported: leakage `none`, temporal_ok `true`,
-baseline_reported `true`, reproducible `false`, confidence `medium`. Two findings:
-(1) `src/train.py:1`: it could not run `make train` because its Python lacked
-pyarrow, so it did not diff `reports/metrics.json` against a fresh run;
-(2) `scripts/exp4_transform.py:80`: `--final` has no guard against a second run,
-the "run it once" rule is convention only.
+baseline_reported `true`, reproducible `true`, confidence `high`. Two findings:
+(1) `README.md:25` says `make test` runs 14 tests but the suite has 20;
+(2) `scripts/exp4_transform.py:75`: `--final` is documented as run-once but
+nothing enforces it.
 
-My judgement: `reproducible: false` is an artifact of the audit environment, not
-a defect in the repo. The auditor used a system Python 3.13, while
-`requirements.txt` pins `pyarrow==26.0.1`, which is installed in `.venv` (I
-checked). I did not re-run the auditor inside the venv, so the "matches a fresh
-run" claim is not independently confirmed by this audit. Finding 2 is accurate
-(`TEST_OUT.write_text` runs unconditionally under `--final`) but changes no
-reported number: the transform is chosen on validation only. A guard would be a
-reasonable hardening, not done here. The auditor found no leakage; I take that
-as consistent with the `check_identity`/test-suite checks but it is one model's
-single run at medium confidence, not proof.
+My judgement: finding 1 is correct (I confirmed 20 tests pass) and is
+documentation only; no reported number changes. I fix the README count in a
+later commit. Finding 2 is accurate (the `--final` branch writes
+`reports/exp4_test.json` unconditionally) but no number changes: the transform
+is chosen from validation only, and `docs/DECISIONS.md` records that test was
+touched once. A guard would be reasonable hardening, not done. The auditor
+could not tell whether `--final` was run more than once; I cannot prove that
+from the repo either beyond the DECISIONS entry. No leakage found, but this is
+one model's single run, not proof.
