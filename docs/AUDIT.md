@@ -2,6 +2,8 @@
 
 ## 1. Teammate repo
 
+> **Note: second audit of this repo.** We work in a group of three, so `lindbergryan04/DSC180A-MA6` is audited by two teammates; this is the second of those audits. It was done independently and does not rely on the other teammate's findings.
+
 **Teammate repo URL:** https://github.com/lindbergryan04/DSC180A-MA6
 **Commit audited:** `ecdae291abd35775e0b32156b784343a8d6463de` (HEAD of the default branch when cloned, 2026-11-25)
 
