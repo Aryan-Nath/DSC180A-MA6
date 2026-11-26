@@ -7,7 +7,7 @@ scores R^2 = 1.0 and looks brilliant while having learned nothing.
 import pandas as pd
 import pytest
 
-from src.config import FORBIDDEN, TARGET
+from src.config import FORBIDDEN, RAW, TARGET
 from src.features import build_features, feature_columns
 from src.ingest import load_raw
 
@@ -55,6 +55,21 @@ def test_rolling_mean_excludes_today(feats):
     if all(d in by_date.index for d in window):
         expected = sum(by_date[d] for d in window) / 7
         assert feats.set_index("dteday").cnt_roll_7[date] == pytest.approx(expected)
+
+
+def test_roll_14_is_mean_of_14_strictly_earlier_days(feats):
+    """cnt_roll_14 on 2012-03-15 must equal the mean of cnt over
+    2012-03-01..2012-03-14, computed here from the raw CSV, not from feats.
+    2012-03-15 itself must not be in the window."""
+    raw = pd.read_csv(RAW, parse_dates=["dteday"]).set_index("dteday")[TARGET]
+    date = pd.Timestamp("2012-03-15")
+    window = pd.date_range(date - pd.Timedelta(days=14), date - pd.Timedelta(days=1))
+    assert len(window) == 14 and date not in window
+    expected = raw.loc[window].mean()
+    assert feats.set_index("dteday").cnt_roll_14[date] == pytest.approx(expected)
+    # Guard against an off-by-one that includes today instead of day-14.
+    with_today = raw.loc[window[1:].append(pd.DatetimeIndex([date]))].mean()
+    assert feats.set_index("dteday").cnt_roll_14[date] != pytest.approx(with_today)
 
 
 def test_no_missing_values(feats):
